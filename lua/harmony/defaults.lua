@@ -1,14 +1,16 @@
 return {
-  themes = {
-    ["*"] = {
-      background = { "#111111", "#efefef" },
-      foreground = { "#ced2da", "#383A42" },
+  ["*"] = {
+    background = { "#111111", "#efefef" },
+    foreground = { "#ced2da", "#383A42" },
 
-      enable = true,
+    enable = true,
 
-      highlights = {
-        Statusline = { bg = "#6DCEEB" },
-      },
+    highlights = {
+      Statusline = { bg = "#6DCEEB" },
+    },
+
+    options = {
+      lightness = -10,
     },
   },
 }

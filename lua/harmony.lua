@@ -1,6 +1,8 @@
 local harmony = {}
 
-harmony._themes = {}
+harmony.themes = {}
+
+harmony.colors = {}
 
 -- TODO: Add ability to create custom highlights
 
@@ -8,41 +10,47 @@ harmony._themes = {}
 
 -- TODO: Add ability for plugins to register themes
 
--- @param themes table: themes, highlights
-function harmony.themes(theme)
-  harmony._themes = vim.tbl_deep_extend("force", {}, harmony._themes, theme or {})
-end
+harmony.colors = {
+  background = "background",
+  forground = "forground",
+  blue = "blue",
+  green = "green",
+  purple = "purple",
+  yellow = "yellow",
+  red = "red",
+  accent = "accent",
+}
 
-function harmony:get_highlights()
-  if not harmony._themes[vim.g.colors_name] then
-    return
-  end
-  return harmony._themes[vim.g.colors_name].highlights
-end
+function harmony.setup(themes)
+  harmony.themes = vim.tbl_deep_extend("force", {}, harmony.themes, themes or {})
 
-function harmony:set_highlights(options)
-  local defaults = require("harmony.defaults")
-  options = vim.tbl_deep_extend("force", {}, defaults, options or {})
+  harmony.builtin = harmony.themes[vim.g.colors_name]
 
-  local highlights = harmony:get_highlights()
-  print(vim.inspect(highlights))
-end
+  local highlights = harmony.builtin.highlights
 
-function harmony.setup(options)
-  local options = options or {}
-  local group = vim.api.nvim_create_augroup("UpdateSetup", { clear = true })
-
-  vim.api.nvim_create_autocmd("ColorScheme", {
-    callback = function()
-      harmony:set_highlights(options)
+  local colors = setmetatable({}, {
+    __index = function(_, key)
+      return harmony.builtin[key]
     end,
-    group = group,
   })
+
+  for index, value in pairs(highlights) do
+    vim.api.nvim_set_hl(0, index, { fg = colors[value.fg] })
+  end
 end
 
 -- @param themes table: themes, highlights
 function harmony.register(themes)
-  harmony._themes = vim.tbl_deep_extend("force", {}, harmony._themes, themes or {})
+  harmony.themes = vim.tbl_deep_extend("force", {}, harmony.themes, themes or {})
 end
+
+-- local Table = {}
+-- Table.Var = "Testing"
+--
+-- function Table:Test()
+--   print(self.Var)
+-- end
+--
+-- Table:Test()
 
 return harmony
