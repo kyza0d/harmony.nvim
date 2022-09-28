@@ -1,16 +1,8 @@
 return {
   ["*"] = {
-    background = { "#111111", "#efefef" },
-    foreground = { "#ced2da", "#383A42" },
+    background = "#111111",
+    foreground = "#ced2da",
 
-    enable = true,
-
-    highlights = {
-      Statusline = { bg = "#6DCEEB" },
-    },
-
-    options = {
-      lightness = -10,
-    },
+    highlights = {},
   },
 }
