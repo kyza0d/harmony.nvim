@@ -1,80 +1,98 @@
 local harmony = {}
 
-harmony.themes = {}
+local utils = require("harmony.utils")
+local factory = require("harmony.factory")
 
-harmony.colors = {}
+local lighten = factory.change_hex_lightness
 
--- TODO: Add ability for plugins to register highlights
+local defaults = require("harmony.defaults")
 
--- TODO: Add ability for plugins to register themes
-
--- stylua: ignore
 harmony.colors = setmetatable({}, {
   __index = function(_, key)
     return key
   end,
 })
 
-local defaults = require("harmony.defaults")
+function harmony.setup(config)
+  local global = vim.tbl_deep_extend("force", {}, defaults["*"], config["*"])
 
-function harmony.setup(themes)
-  harmony.themes = vim.tbl_deep_extend("force", {}, harmony.themes, themes or {})
+  local colorscheme = vim.tbl_deep_extend("force", {}, global, config[vim.g.colors_name] or global)
+  -- print(vim.inspect(colorscheme.background))
 
-  local global = harmony.themes["*"] or defaults["*"]
-  harmony.colorscheme = harmony.themes[vim.g.colors_name] or global
+  local variant = utils.get_variant() -- "1" or "2"
 
-  local highlights = harmony.colorscheme.highlights
+  local highlights = colorscheme.highlights
 
   local colors = setmetatable({}, {
     __index = function(_, key)
-      return harmony.colorscheme[key]
+      local color = colorscheme[key]
+      -- print(vim.inspect(colorscheme))
+      local background = colorscheme.background[variant] or colorscheme.background
+      local foreground = colorscheme.foreground[variant] or colorscheme.foreground
+
+      -- If the colorscheme lookup isn't found
+      if color then
+        return color[variant] or color
+      else
+        -- Return fallback highlights
+        -- colorscheme = global
+
+        local shades = function()
+          return {
+            background_1 = lighten(background, 10),
+            background_2 = lighten(background, 15),
+            background_3 = lighten(background, 30),
+            foreground_1 = lighten(foreground, -10),
+            foreground_2 = lighten(foreground, -15),
+            foreground_3 = lighten(foreground, -30),
+          }
+        end
+
+        if highlights[key] then
+          return highlights[key][variant] or highlights[key]
+        else
+          return shades()[key]
+        end
+      end
     end,
   })
 
-  -- stylua: ignore
   for group, gui in pairs(highlights) do
     vim.api.nvim_set_hl(0, group, {
-      fg            = colors[gui.fg],
-      bg            = colors[gui.bg],
-      sp            = colors[gui.sp],
-      blend         = gui.blend,
-      bold          = gui.bold,
-      standout      = gui.standout,
-      underline     = gui.underline,
-      undercurl     = gui.undercurl,
-      underdouble   = gui.underdouble,
-      underdotted   = gui.underdotted,
+      fg = colors[gui.fg] or gui.fg,
+      bg = colors[gui.bg] or gui.bg,
+      sp = colors[gui.sp] or gui.sp,
+      blend = gui.blend,
+      bold = gui.bold,
+      standout = gui.standout,
+      underline = gui.underline,
+      undercurl = gui.undercurl,
+      underdouble = gui.underdouble,
+      underdotted = gui.underdotted,
       strikethrough = gui.strikethrough,
-      italic        = gui.italic,
-      reverse       = gui.reverse,
-      nocombine     = gui.nocombine,
-      link          = gui.link,
-      default       = gui.default,
-      ctermfg       = gui.ctermfg,
-      ctermbg       = gui.ctermbg,
-      cterm         = gui.cterm,
+      italic = gui.italic,
+      reverse = gui.reverse,
+      nocombine = gui.nocombine,
+      link = gui.link,
+      cterm = gui.cterm,
+      ctermfg = gui.ctermfg,
+      ctermbg = gui.ctermbg,
+      default = gui.default,
     })
   end
 
   vim.api.nvim_create_autocmd({ "ColorScheme" }, {
     callback = function()
-      harmony.setup(themes)
+      harmony.setup(config)
     end,
+    group = vim.api.nvim_create_augroup("harmony.nvim", {
+      clear = true,
+    }),
   })
 end
 
--- @param themes table: themes, highlights
 function harmony.register(themes)
-  harmony.themes = vim.tbl_deep_extend("force", {}, harmony.themes, themes or {})
+  -- harmony.theme = vim.tbl_deep_extend("force", {}, harmony.theme, themes or {})
 end
-
--- local Table = {}
--- Table.Var = "Testing"
---
--- function Table:Test()
---   print(self.Var)
--- end
---
--- Table:Test()
 
 return harmony
