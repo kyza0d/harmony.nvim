@@ -1,121 +1,134 @@
 local harmony = {}
 
-local utils = require("harmony.utils")
+harmony.themes = {}
+
 local factory = require("harmony.factory")
-
-local lightness = factory.change_hex_lightness
-
+local utils = require("harmony.utils")
 local defaults = require("harmony.defaults")
+local plugin_highlights = require("harmony.plugins")
 
--- TODO: Figure out how to return color values
+local api = vim.api
+
 harmony.colors = setmetatable({}, {
   __index = function(_, key)
     return key
   end,
 })
 
-local plugin_highlights = require("harmony.plugins")
-
-harmony.themes = {}
-
 function harmony.setup(config)
-  local global = vim.tbl_deep_extend("force", {}, defaults.themes, config)
+  --- Merges `config` with the default values
+  -- @param config The configuration to merge with the default themes
+  -- @return A table containing the merged default themes and configuration
+  harmony.themes = utils.extend("force", defaults.themes, config or defaults.themes)
 
-  local variant = utils.get_variant() -- 1 or 2
+  --- Merges the global and local color scheme, with the local color scheme taking precedence
+  -- @return The resulting merged color scheme
+  local colorscheme = utils.extend("force", harmony.themes["*"], harmony.themes[vim.g.colors_name] or {})
 
-  harmony.themes = vim.tbl_deep_extend("force", {}, global, config or global)
+  --- Initializes the colorscheme.highlights table if it does not exist
+  colorscheme.highlights = colorscheme.highlights or {}
 
-  -- merge defaults with user config
-  local colorscheme = vim.tbl_deep_extend("force", {}, harmony.themes["*"], harmony.themes[vim.g.colors_name] or {})
-
-  local highlights = colorscheme.highlights
-  local plugins = colorscheme.plugins
-
-  -- add plugin highlights
-  for _, plugin in ipairs(plugins) do
+  --- Merges the highlights from plugins specified in the colorscheme into the colorscheme highlights
+  -- @param colorscheme The colorscheme table
+  -- @param plugin_highlights A table containing the highlights for different plugins
+  for _, plugin in ipairs(colorscheme.plugins or {}) do
     if plugin_highlights[plugin] then
-      highlights = vim.tbl_deep_extend("force", {}, highlights, plugin_highlights[plugin])
+      colorscheme.highlights = utils.extend("keep", colorscheme.highlights, plugin_highlights[plugin])
     end
+  end
+
+  --- Gets the color variant from `vim.opt.background._value`
+  -- @return The color variant, either 1 (dark) or 2 (light)
+  local variant = utils.get_variant()
+
+  --- Resolves a color variant based on the provided value.
+  -- If the `value` is a table, it returns either `value[variant]` or `value.default`, whichever is available.
+  -- @param value The value to resolve the color variant for.
+  -- @return The resolved color variant.
+  local function resolve_color_variant(value)
+    return type(value) == "table" and (value[variant] or value.default) or value
   end
 
   local colors = setmetatable({}, {
     __index = function(_, key)
       local lookup = colorscheme[key]
-      local background = colorscheme.background[variant] or colorscheme.background
-      local foreground = colorscheme.foreground[variant] or colorscheme.foreground
 
-      -- If the colorscheme lookup isn't found
+      local bg = resolve_color_variant(colorscheme.bg)
+      local fg = resolve_color_variant(colorscheme.fg)
+
       if lookup then
-        return lookup[variant] or lookup
-      else
-        local shades = {
-          background_0 = background,
-          background_1 = lightness(background, 4),
-          background_2 = lightness(background, 8),
-          background_3 = lightness(background, 10),
-          background_4 = lightness(background, 14),
-          background_negative_1 = lightness(background, -4),
-          background_negative_2 = lightness(background, -6),
-
-          foreground_0 = foreground,
-          foreground_1 = lightness(foreground, -10),
-          foreground_2 = lightness(foreground, -15),
-          foreground_3 = lightness(foreground, -35),
-          foreground_4 = lightness(foreground, -45),
-          foreground_negative_1 = lightness(foreground, 3),
-          foreground_negative_2 = lightness(foreground, 5),
-        }
-
-        if highlights[key] then
-          return highlights[key][variant] or highlights[key]
-        else
-          return shades[key]
-        end
+        return resolve_color_variant(lookup)
       end
+
+      if colorscheme.highlights[key] then
+        return resolve_color_variant(colorscheme.highlights[key])
+      end
+
+      local shades = {
+        bg_0 = bg,
+        bg_1 = factory.lightness(bg, 6),
+        bg_2 = factory.lightness(bg, 14),
+        bg_3 = factory.lightness(bg, 18),
+        bg_4 = factory.lightness(bg, 25),
+
+        bg_negative_1 = factory.lightness(bg, -8),
+        bg_negative_2 = factory.lightness(bg, -15),
+        fg_0 = fg,
+        fg_1 = factory.lightness(fg, -20),
+        fg_2 = factory.lightness(fg, -30),
+        fg_3 = factory.lightness(fg, -60),
+        fg_4 = factory.lightness(fg, -120),
+
+        fg_negative_1 = factory.lightness(fg, 3),
+        fg_negative_2 = factory.lightness(fg, 4),
+      }
+
+      return shades[key]
     end,
   })
 
   -- stylua: ignore
-  for group, gui in pairs(highlights) do
-    if gui.links then
-      vim.api.nvim_command("highlight! link " .. group .. " " .. gui.links)
+  local keys = {
+    "fg", "bg", "sp", "blend", "bold", "standout", "underline",
+    "undercurl", "underdouble", "underdotted", "strikethrough", "italic", "reverse",
+    "nocombine",  "cterm", "ctermfg", "ctermbg", "default"
+  }
+
+  for group, gui in pairs(colorscheme.highlights) do
+    if gui.link then
+      api.nvim_set_hl(0, group, { link = gui.link })
     else
-      vim.api.nvim_set_hl(0, group, {
-        fg            = colors[gui.fg] or gui.fg,
-        bg            = colors[gui.bg] or gui.bg,
-        sp            = colors[gui.sp] or gui.sp,
-        blend         = gui.blend,
-        bold          = gui.bold,
-        standout      = gui.standout,
-        underline     = gui.underline,
-        undercurl     = gui.undercurl,
-        underdouble   = gui.underdouble,
-        underdotted   = gui.underdotted,
-        strikethrough = gui.strikethrough,
-        italic        = gui.italic,
-        reverse       = gui.reverse,
-        nocombine     = gui.nocombine,
-        link          = gui.link,
-        cterm         = gui.cterm,
-        ctermfg       = gui.ctermfg,
-        ctermbg       = gui.ctermbg,
-        default       = gui.default,
-      })
+      local attrs = {}
+      for _, key in ipairs(keys) do
+        attrs[key] = colors[gui[key]] or gui[key]
+      end
+
+      local success, error = pcall(api.nvim_set_hl, 0, group, attrs)
+
+      if not success then
+        -- Log the error for debugging purposes
+        print("Error setting highlight group '" .. group .. "': " .. error)
+        return
+      end
+    end
+
+    if gui.clear then
+      api.nvim_cmd({ cmd = "highlight", args = { "clear", group } }, {})
     end
   end
 
-  vim.api.nvim_create_autocmd({ "ColorScheme" }, {
+  local harmony_augroup = api.nvim_create_augroup("harmony.nvim", { clear = true })
+
+  api.nvim_create_autocmd({ "ColorScheme" }, {
     callback = function()
       harmony.setup(config)
     end,
-    group = vim.api.nvim_create_augroup("harmony.nvim", {
-      clear = true,
-    }),
+    group = harmony_augroup,
   })
 end
 
 function harmony.register(themes)
-  harmony.themes = vim.tbl_deep_extend("force", {}, harmony.themes, themes)
+  harmony.themes = utils.extend("keep", harmony.themes, themes)
   harmony.setup(harmony.themes)
 end
 

@@ -181,16 +181,61 @@ end
 -- @param percent The percentage to lighten or darken the color.
 --                Negative values darken the color, positive values lighten it
 -- @return The hex color value
-M.change_hex_lightness = function(hex, percent)
-  local h, s, l = M.hex2hsl(hex)
-  l = l + (percent / 100)
-  if l > 1 then
-    l = 1
+
+-- M.change_hex_lightness = function(hex, percent)
+--   local h, s, l = M.hex2hsl(hex)
+--   l = l + (percent / 100)
+--   if l > 1 then
+--     l = 1
+--   end
+--   if l < 0 then
+--     l = 0
+--   end
+--   return M.hsl2hex(h, s, l)
+-- end
+
+-- Clamp an rgb value to 0-255
+-- @param r The red value
+-- @param g The green value
+-- @param b The blue value
+-- @return r, g, b The clamped values
+M.rbg_clamp = function(r, g, b)
+  if r > 255 then
+    r = 255
   end
-  if l < 0 then
-    l = 0
+  if r < 0 then
+    r = 0
   end
-  return M.hsl2hex(h, s, l)
+  if g > 255 then
+    g = 255
+  end
+  if g < 0 then
+    g = 0
+  end
+  if b > 255 then
+    b = 255
+  end
+  if b < 0 then
+    b = 0
+  end
+  return r, g, b
+end
+
+-- Lighten or darken a color by a given percentage
+-- @param hex The hex color value
+-- @param percent The percentage to lighten or darken the color.
+--                Negative values darken the color, positive values lighten it
+-- @return The hex color value
+M.lightness = function(hex, amount)
+  local r, g, b = M.hex2rgb(hex)
+
+  r = r + amount
+  g = g + amount
+  b = b + amount
+
+  r, g, b = M.rbg_clamp(r, g, b)
+
+  return M.rgb2hex(r, g, b)
 end
 
 -- Compute a gradient between two colors

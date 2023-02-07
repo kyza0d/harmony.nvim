@@ -20,6 +20,10 @@ local hex2rgb = function(hex)
   return r, g, b
 end
 
+utils.extend = function(method, t1, t2)
+  return vim.tbl_deep_extend(method, {}, t1, t2)
+end
+
 utils.blend = function(color1, color2, percent)
   local r1, g1, b1 = hex2rgb(color1)
   local r2, g2, b2 = hex2rgb(color2)
