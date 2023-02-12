@@ -115,6 +115,7 @@ plugins["lukas-reineke/indent-blankline.nvim"] = {
   IndentBlanklineSpaceCharBlankline = { fg = colors.fg_4, nocombine = true },
   IndentBlanklineContextSpaceChar   = { fg = colors.bg_4, nocombine = true },
   IndentBlanklineContextChar        = { fg = colors.fg_4, nocombine = true },
+  IndentBlanklineContextStart       = { sp = colors.fg_4, underline = true, nocombine = true },
 }
 
 plugins["folke/todo-comments.nvim"] = {

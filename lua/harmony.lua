@@ -1,14 +1,15 @@
-local harmony = {}
-
-harmony.themes = {}
-
-local factory = require("harmony.factory")
 local utils = require("harmony.utils")
+local factory = require("harmony.factory")
 local defaults = require("harmony.defaults")
-local plugin_highlights = require("harmony.plugins")
 
-local api = vim.api
+local harmony = {
+  themes = {},
+}
 
+-- Sets a default value for harmony.colors
+-- The default value is the string passed to the __index metamethod.
+-- This allows the table to return the string passed as key when an undefined key is requested, instead of returning nil.
+-- @field `harmony.colors` A table with the default value of the string passed as key in case of an undefined key request.
 harmony.colors = setmetatable({}, {
   __index = function(_, key)
     return key
@@ -25,8 +26,10 @@ function harmony.setup(config)
   -- @return The resulting merged color scheme
   local colorscheme = utils.extend("force", harmony.themes["*"], harmony.themes[vim.g.colors_name] or {})
 
-  --- Initializes the colorscheme.highlights table if it does not exist
+  --- Initializes the `colorscheme.highlights` table if it does not exist
   colorscheme.highlights = colorscheme.highlights or {}
+
+  local plugin_highlights = require("harmony.plugins")
 
   --- Merges the highlights from plugins specified in the colorscheme into the colorscheme highlights
   -- @param colorscheme The colorscheme table
@@ -46,7 +49,7 @@ function harmony.setup(config)
   -- @param value The value to resolve the color variant for.
   -- @return The resolved color variant.
   local function resolve_color_variant(value)
-    return type(value) == "table" and (value[variant] or value.default) or value
+    return type(value) == "table" and value[variant] or value
   end
 
   local colors = setmetatable({}, {
@@ -73,6 +76,7 @@ function harmony.setup(config)
 
         bg_negative_1 = factory.lightness(bg, -8),
         bg_negative_2 = factory.lightness(bg, -15),
+
         fg_0 = fg,
         fg_1 = factory.lightness(fg, -20),
         fg_2 = factory.lightness(fg, -30),
@@ -95,36 +99,46 @@ function harmony.setup(config)
   }
 
   for group, gui in pairs(colorscheme.highlights) do
+    local attrs = {}
+
+    for _, key in ipairs(keys) do
+      attrs[key] = colors[gui[key]] or gui[key]
+    end
+
     if gui.link then
-      api.nvim_set_hl(0, group, { link = gui.link })
-    else
-      local attrs = {}
-      for _, key in ipairs(keys) do
-        attrs[key] = colors[gui[key]] or gui[key]
-      end
-
-      local success, error = pcall(api.nvim_set_hl, 0, group, attrs)
-
-      if not success then
-        -- Log the error for debugging purposes
-        print("Error setting highlight group '" .. group .. "': " .. error)
-        return
-      end
+      attrs.link = gui.link
     end
 
     if gui.clear then
-      api.nvim_cmd({ cmd = "highlight", args = { "clear", group } }, {})
+      vim.api.nvim_cmd({ cmd = "highlight", args = { "clear", group } }, {})
+    end
+
+    local success, error = pcall(vim.api.nvim_set_hl, 0, group, attrs)
+
+    if not success then
+      -- Log the error for debugging purposes
+      print("harmony.nvim: Error setting highlight group '" .. group .. "': " .. error)
+      return
     end
   end
 
-  local harmony_augroup = api.nvim_create_augroup("harmony.nvim", { clear = true })
+  local harmony_augroup = vim.api.nvim_create_augroup("harmony.nvim", { clear = true })
 
-  api.nvim_create_autocmd({ "ColorScheme" }, {
+  vim.api.nvim_create_autocmd({ "ColorScheme" }, {
     callback = function()
       harmony.setup(config)
     end,
     group = harmony_augroup,
   })
+
+  vim.api.nvim_create_autocmd({ "ColorSchemePre" }, {
+    callback = function()
+      vim.api.nvim_cmd({ cmd = "highlight", args = { "clear" } }, {})
+    end,
+    group = harmony_augroup,
+  })
+
+  config.on_change()
 end
 
 function harmony.register(themes)

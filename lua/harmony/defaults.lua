@@ -26,6 +26,8 @@ defaults.themes = {
       "nvim-neo-tree/neo-tree.nvim",
     },
 
+    on_change = function() end,
+
     highlights = {
 
       -- see :help highlight-groups
@@ -96,10 +98,10 @@ defaults.themes = {
       DiagnosticUnderlineWarn = { sp = colors.yellow, undercurl = true },
       DiagnosticUnderlineInfo = { sp = colors.purple, undercurl = true },
       DiagnosticUnderlineHint = { sp = colors.blue, undercurl = true },
-      DiagnosticFloatingError = { fg = colors.red, bg = colors.bg_2 },
-      DiagnosticFloatingWarn = { fg = colors.yellow, bg = colors.bg_2 },
-      DiagnosticFloatingInfo = { fg = colors.purple, bg = colors.bg_2 },
-      DiagnosticFloatingHint = { fg = colors.blue, bg = colors.bg_2 },
+      DiagnosticFloatingError = { fg = colors.red, bg = colors.bg_1 },
+      DiagnosticFloatingWarn = { fg = colors.yellow, bg = colors.bg_1 },
+      DiagnosticFloatingInfo = { fg = colors.purple, bg = colors.bg_1 },
+      DiagnosticFloatingHint = { fg = colors.blue, bg = colors.bg_1 },
       DiagnosticSignError = { fg = colors.red },
       DiagnosticSignWarn = { fg = colors.yellow },
       DiagnosticSignInfo = { fg = colors.purple },
