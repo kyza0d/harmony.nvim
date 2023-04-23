@@ -1,15 +1,12 @@
+-- TODO: Provide callback to colors using `require("harmony").colors`
+
 local utils = require("harmony.utils")
 local factory = require("harmony.factory")
 local defaults = require("harmony.defaults")
 
-local harmony = {
-  themes = {},
-}
+local harmony = {}
 
--- Sets a default value for harmony.colors
--- The default value is the string passed to the __index metamethod.
--- This allows the table to return the string passed as key when an undefined key is requested, instead of returning nil.
--- @field `harmony.colors` A table with the default value of the string passed as key in case of an undefined key request.
+-- @class colors <table,tabl> Default value of the string passed as key in case of an undefined key request.
 harmony.colors = setmetatable({}, {
   __index = function(_, key)
     return key
@@ -17,75 +14,90 @@ harmony.colors = setmetatable({}, {
 })
 
 function harmony.setup(config)
-  --- Merges `config` with the default values
-  -- @param config The configuration to merge with the default themes
-  -- @return A table containing the merged default themes and configuration
+  -- @param config <table, table> The configuration to merge with the default themes
   harmony.themes = utils.extend("force", defaults.themes, config or defaults.themes)
 
-  --- Merges the global and local color scheme, with the local color scheme taking precedence
-  -- @return The resulting merged color scheme
+  -- @class table <table, string> Color config for current colorscheme
   local colorscheme = utils.extend("force", harmony.themes["*"], harmony.themes[vim.g.colors_name] or {})
 
-  --- Initializes the `colorscheme.highlights` table if it does not exist
+  -- @class highlights <table, table> Custom highlights
   colorscheme.highlights = colorscheme.highlights or {}
 
   local plugin_highlights = require("harmony.plugins")
 
-  --- Merges the highlights from plugins specified in the colorscheme into the colorscheme highlights
-  -- @param colorscheme The colorscheme table
-  -- @param plugin_highlights A table containing the highlights for different plugins
+  -- @param colorscheme <table, string> The colorscheme table
+  -- @param plugin_highlights <table, string> Highlights for supported plugins
   for _, plugin in ipairs(colorscheme.plugins or {}) do
     if plugin_highlights[plugin] then
       colorscheme.highlights = utils.extend("keep", colorscheme.highlights, plugin_highlights[plugin])
     end
   end
 
-  --- Gets the color variant from `vim.opt.background._value`
-  -- @return The color variant, either 1 (dark) or 2 (light)
+  -- @class variant <number> The color variant, either 1 (dark) or 2 (light)
   local variant = utils.get_variant()
 
-  --- Resolves a color variant based on the provided value.
-  -- If the `value` is a table, it returns either `value[variant]` or `value.default`, whichever is available.
   -- @param value The value to resolve the color variant for.
   -- @return The resolved color variant.
   local function resolve_color_variant(value)
     return type(value) == "table" and value[variant] or value
   end
 
+  -- @class string: Returns respective value if found in `lookup`
   local colors = setmetatable({}, {
     __index = function(_, key)
-      local lookup = colorscheme[key]
+      if colorscheme[key] then
+        -- @class lookup: Reference the color values for the given scheme
+        return resolve_color_variant(colorscheme[key])
+      end
 
       local bg = resolve_color_variant(colorscheme.bg)
       local fg = resolve_color_variant(colorscheme.fg)
 
-      if lookup then
-        return resolve_color_variant(lookup)
+      local shades = {}
+
+      -- @class shades: Lightness (0-4)
+      if variant == 1 then
+        shades = {
+          bg_0 = bg,
+          bg_1 = factory.lightness(bg, 6),
+          bg_2 = factory.lightness(bg, 14),
+          bg_3 = factory.lightness(bg, 16),
+          bg_4 = factory.lightness(bg, 23),
+
+          bg_negative_1 = factory.lightness(bg, -8),
+          bg_negative_2 = factory.lightness(bg, -15),
+
+          fg_0 = fg,
+          fg_1 = factory.lightness(fg, -20),
+          fg_2 = factory.lightness(fg, -30),
+          fg_3 = factory.lightness(fg, -60),
+          fg_4 = factory.lightness(fg, -120),
+
+          fg_negative_1 = factory.lightness(fg, 3),
+          fg_negative_2 = factory.lightness(fg, 4),
+        }
+      else
+        -- light variant
+        shades = {
+          bg_0 = bg,
+          bg_1 = factory.lightness(bg, -6),
+          bg_2 = factory.lightness(bg, -14),
+          bg_3 = factory.lightness(bg, -18),
+          bg_4 = factory.lightness(bg, -25),
+
+          bg_negative_1 = factory.lightness(bg, -8),
+          bg_negative_2 = factory.lightness(bg, -15),
+
+          fg_0 = fg,
+          fg_1 = factory.lightness(fg, 20),
+          fg_2 = factory.lightness(fg, 30),
+          fg_3 = factory.lightness(fg, 60),
+          fg_4 = factory.lightness(fg, 120),
+
+          fg_negative_1 = factory.lightness(fg, -3),
+          fg_negative_2 = factory.lightness(fg, -4),
+        }
       end
-
-      if colorscheme.highlights[key] then
-        return resolve_color_variant(colorscheme.highlights[key])
-      end
-
-      local shades = {
-        bg_0 = bg,
-        bg_1 = factory.lightness(bg, 6),
-        bg_2 = factory.lightness(bg, 14),
-        bg_3 = factory.lightness(bg, 18),
-        bg_4 = factory.lightness(bg, 25),
-
-        bg_negative_1 = factory.lightness(bg, -8),
-        bg_negative_2 = factory.lightness(bg, -15),
-
-        fg_0 = fg,
-        fg_1 = factory.lightness(fg, -20),
-        fg_2 = factory.lightness(fg, -30),
-        fg_3 = factory.lightness(fg, -60),
-        fg_4 = factory.lightness(fg, -120),
-
-        fg_negative_1 = factory.lightness(fg, 3),
-        fg_negative_2 = factory.lightness(fg, 4),
-      }
 
       return shades[key]
     end,
@@ -137,8 +149,6 @@ function harmony.setup(config)
     end,
     group = harmony_augroup,
   })
-
-  config.on_change()
 end
 
 function harmony.register(themes)

@@ -24,12 +24,20 @@ utils.extend = function(method, t1, t2)
   return vim.tbl_deep_extend(method, {}, t1, t2)
 end
 
-utils.blend = function(color1, color2, percent)
-  local r1, g1, b1 = hex2rgb(color1)
-  local r2, g2, b2 = hex2rgb(color2)
-  local r = math.floor(r1 + (r2 - r1) * percent)
-  local g = math.floor(g1 + (g2 - g1) * percent)
-  local b = math.floor(b1 + (b2 - b1) * percent)
+utils.blend = function(color1, color2, ratio)
+  local r1, g1, b1 = color1:match("#(%x%x)(%x%x)(%x%x)")
+  local r2, g2, b2 = color2:match("#(%x%x)(%x%x)(%x%x)")
+
+  -- Convert hex color codes to decimal values
+  r1, g1, b1 = tonumber(r1, 16), tonumber(g1, 16), tonumber(b1, 16)
+  r2, g2, b2 = tonumber(r2, 16), tonumber(g2, 16), tonumber(b2, 16)
+
+  -- Calculate the blended color
+  local r = math.floor(r1 + (r2 - r1) * ratio)
+  local g = math.floor(g1 + (g2 - g1) * ratio)
+  local b = math.floor(b1 + (b2 - b1) * ratio)
+
+  -- Convert decimal values back to hex color code
   return string.format("#%02x%02x%02x", r, g, b)
 end
 

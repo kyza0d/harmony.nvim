@@ -1,6 +1,7 @@
 local defaults = {}
 
 local colors = require("harmony.colors")
+local blend = require("harmony.utils").blend
 
 defaults.themes = {
   ["*"] = {
@@ -17,16 +18,16 @@ defaults.themes = {
     lightness = 0,
 
     plugins = {
-      "akinsho/bufferline.nvim",
       "hrsh7th/nvim-cmp",
       "SmiteshP/nvim-navic",
       "folke/todo-comments.nvim",
       "nvim-telescope/telescope.nvim",
       "lukas-reineke/indent-blankline.nvim",
       "nvim-neo-tree/neo-tree.nvim",
+      "j-hui/fidget.nvim",
     },
 
-    on_change = function() end,
+    -- on_change = function() end,
 
     highlights = {
 
@@ -34,7 +35,6 @@ defaults.themes = {
       ColorColumn = { bg = colors.bg_negative_1 },
       CurSearch = { bg = colors.bg_3 },
       CursorColumn = { bg = colors.bg_1 },
-      CursorLine = { bg = colors.bg_1 },
       Directory = { fg = colors.accent },
       DiffAdd = { fg = colors.green },
       DiffChange = { fg = colors.blue },
@@ -44,11 +44,12 @@ defaults.themes = {
       ErrorMsg = { fg = colors.red },
       WinSeparator = { fg = colors.bg_4 },
       VertSplit = { fg = colors.bg_4 },
-      Folded = { bg = colors.bg_2 },
+      Folded = { bg = colors.bg_negative_1, fg = colors.blue },
       FoldColumn = { fg = colors.fg_3, bg = colors.bg_0 },
       SignColumn = { bg = colors.bg_0 },
       Substitute = { bg = colors.accent },
       LineNr = { fg = colors.fg_4 },
+      CursorLine = { bg = colors.bg_1 },
       CursorLineNr = { bg = colors.bg_1 },
       CursorLineSign = { bg = colors.bg_1 },
       CursorLineFold = { bg = colors.bg_1 },
@@ -59,12 +60,12 @@ defaults.themes = {
       NonText = { fg = colors.accent },
       Normal = { bg = colors.bg_0, fg = colors.fg_1 },
       NormalFloat = { bg = colors.bg_1, fg = colors.fg_3 },
-      FloatBorder = { bg = colors.bg_0, fg = colors.fg_4 },
+      FloatBorder = { bg = colors.bg_1, fg = colors.fg_4 },
       NormalNC = { bg = colors.bg_0 },
       Pmenu = { bg = colors.bg_1 },
       PmenuSel = { bg = colors.bg_3 },
       PmenuSbar = { bg = colors.bg_2 },
-      PmenuThumb = { bg = colors.bg_3 },
+      PmenuThumb = { bg = colors.fg_4 },
       Question = { fg = colors.yellow },
       QuickFixLine = { bg = colors.bg_2 },
       Search = { bg = colors.bg_2 },
@@ -75,7 +76,7 @@ defaults.themes = {
       StatusLine = { bg = colors.bg_2, fg = colors.fg_2 },
       StatusLineNC = { bg = colors.bg_1, fg = colors.fg_3 },
       TabLine = { fg = colors.fg_3 },
-      TabLineSel = { fg = colors.fg_0, bg = colors.accent },
+      TabLineSel = { fg = colors.bg_3, bg = colors.accent },
       TabLineFill = { fg = colors.bg_2 },
       Title = { fg = colors.yellow },
       Visual = { bg = colors.bg_2 },
@@ -106,6 +107,9 @@ defaults.themes = {
       DiagnosticSignWarn = { fg = colors.yellow },
       DiagnosticSignInfo = { fg = colors.purple },
       DiagnosticSignHint = { fg = colors.blue },
+      LspReferenceRead = { bg = colors.bg_1 },
+      LspReferenceText = { bg = colors.bg_1 },
+      LspReferenceWrite = { bg = colors.bg_1 },
     },
 
     enable = false,
